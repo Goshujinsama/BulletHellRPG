@@ -1,13 +1,28 @@
-#include "Engine.h"
+#include "Window.h"
+
+#include "Game.h"
 
 namespace Engine
 {
-	Game::Game()
+	Game::Game(LPCWSTR gameTitle)
 	{
+		m_input = new Input();
+		m_window = new Window(gameTitle, m_input);
 	}
-
+	
 	Game::~Game()
 	{
+		if(m_window != NULL)
+		{
+			delete(m_window);
+			m_window = NULL;
+		}
+
+		if(m_input != NULL)
+		{
+			delete(m_input);
+			m_input = NULL;
+		}
 	}
 
 	void Game::Run()
@@ -44,5 +59,10 @@ namespace Engine
 		}
 
 		return;
+	}
+
+	Input	*Game::getInput()
+	{
+		return m_input;
 	}
 }

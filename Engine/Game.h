@@ -1,12 +1,14 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "Window.h"
+
 namespace Engine
 {
 	class Game
 	{
 	public:
-		Game();
+		Game(LPCWSTR gameTitle);
 		~Game();
 
 		void Run();
@@ -15,6 +17,13 @@ namespace Engine
 		virtual bool Update(float delta, long time) = 0;
 		virtual void Render() = 0;
 		virtual void Shutdown() = 0;
+
+	protected:
+		Input	*getInput();
+
+	private:
+		Input	*m_input;
+		Window	*m_window;
 	};
 }
 

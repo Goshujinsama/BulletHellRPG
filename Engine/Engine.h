@@ -1,10 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#define WIN32_LEAN_AND_MEAN
-
-#include <Windows.h>
-
 #include "Game.h"
 
 #define START_GAME(x) int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) \

@@ -1,0 +1,21 @@
+#ifndef INPUT_H
+#define INPUT_H
+
+namespace Engine
+{
+	class Input
+	{
+	public:
+		Input();
+
+		void KeyDown(unsigned int key);
+		void KeyUp(unsigned int key);
+
+		bool IsKeyDown(unsigned int key);
+
+	private:
+		bool m_keys[256];
+	};
+}
+
+#endif // INPUT_H
