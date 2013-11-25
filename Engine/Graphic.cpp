@@ -11,6 +11,7 @@ namespace Engine
 	{
 		m_vsync_enabled = true;
 		m_fullscreen = false;
+		m_isReady = false;
 
 		m_window->SetGraphics(this);
 
@@ -27,6 +28,7 @@ namespace Engine
 		DXGI_SWAP_CHAIN_DESC			swapChainDesc;
 		D3D_FEATURE_LEVEL				featureLevel;
 		D3D11_BLEND_DESC				blendDesc;
+		D3D11_DEPTH_STENCIL_DESC		depthStencilDesc;
 		D3D11_SAMPLER_DESC				samplerDesc;
 		unsigned int numModes, i, numerator, denominator, stringLength;
 		int error;
@@ -89,7 +91,7 @@ namespace Engine
 		swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 		swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		swapChainDesc.Flags = 0;
+		swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 		featureLevel = D3D_FEATURE_LEVEL_11_0;
 		RETURN_FAIL( D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1, D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext) );
@@ -109,6 +111,25 @@ namespace Engine
 
 		m_deviceContext->OMSetBlendState( m_blendAlpha, NULL, 0xFFFFFF );
 
+		ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+		depthStencilDesc.DepthEnable = true;
+		depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+		depthStencilDesc.StencilEnable = true;
+		depthStencilDesc.StencilReadMask = 0xFF;
+		depthStencilDesc.StencilWriteMask = 0xFF;
+		depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+		depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+		depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		RETURN_FAIL( m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState) );
+
+		m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
+
 		ZeroMemory( &samplerDesc, sizeof( samplerDesc ) );
 		samplerDesc.AddressU        = D3D11_TEXTURE_ADDRESS_CLAMP;
 		samplerDesc.AddressV        = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -123,10 +144,8 @@ namespace Engine
 
 	bool Graphics::CreateTargets()
 	{
-		HRESULT							result;
 		ID3D11Texture2D					*backBufferPtr;
 		D3D11_TEXTURE2D_DESC			depthBufferDesc;
-		D3D11_DEPTH_STENCIL_DESC		depthStencilDesc;
 		D3D11_DEPTH_STENCIL_VIEW_DESC	depthStencilViewDesc;
 
 		SAFE_RELEASE(m_depthStencilView);
@@ -151,43 +170,25 @@ namespace Engine
 		depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 		depthBufferDesc.CPUAccessFlags = 0;
 		depthBufferDesc.MiscFlags = 0;
-		result = m_device->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer);
-		if(FAILED(result)) return false;
-
-		ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
-		depthStencilDesc.DepthEnable = true;
-		depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-		depthStencilDesc.StencilEnable = true;
-		depthStencilDesc.StencilReadMask = 0xFF;
-		depthStencilDesc.StencilWriteMask = 0xFF;
-		depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-		depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-		depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		result = m_device->CreateDepthStencilState(&depthStencilDesc, &m_depthStencilState);
-		if(FAILED(result)) return false;
-
-		m_deviceContext->OMSetDepthStencilState(m_depthStencilState, 1);
+		RETURN_FAIL( m_device->CreateTexture2D(&depthBufferDesc, NULL, &m_depthStencilBuffer) );
 
 		ZeroMemory(&depthStencilViewDesc, sizeof(depthStencilViewDesc));
 		depthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		depthStencilViewDesc.Texture2D.MipSlice = 0;
-		result = m_device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView);
-		if(FAILED(result)) return false;
+		RETURN_FAIL( m_device->CreateDepthStencilView(m_depthStencilBuffer, &depthStencilViewDesc, &m_depthStencilView) );
 
 		m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
+
+		m_isReady = true;
 
 		return true;
 	}
 
 	void Graphics::Shutdown()
 	{
+		m_swapChain->SetFullscreenState(false, NULL);
+
 		SAFE_RELEASE(m_depthStencilView);
 		SAFE_RELEASE(m_depthStencilState);
 		SAFE_RELEASE(m_depthStencilBuffer);
@@ -246,7 +247,7 @@ namespace Engine
 			{
 				if(fullscreen)
 				{
-					SetResolution(1920, 1080);
+					SetResolution(1680, 1050);
 					m_fullscreen = fullscreen;
 					m_swapChain->SetFullscreenState(fullscreen, NULL);
 				}
@@ -284,6 +285,7 @@ namespace Engine
 			}
 			else if(swapChainDesc.BufferDesc.Width != width || swapChainDesc.BufferDesc.Height != height)
 			{
+				m_isReady = false;
 				SAFE_RELEASE(m_depthStencilView);
 				SAFE_RELEASE(m_depthStencilState);
 				SAFE_RELEASE(m_depthStencilBuffer);
@@ -307,7 +309,10 @@ namespace Engine
 		{
 			if(width == m_screenSize.cx && height == m_screenSize.cy)
 			{
-				m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_UNKNOWN, 0 );
+				m_deviceContext->OMSetRenderTargets(0, 0, 0);
+				SAFE_RELEASE(m_renderTargetView);
+
+				m_swapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH );
 
 				CreateTargets();
 			}
@@ -332,5 +337,10 @@ namespace Engine
 	ID3D11SamplerState *Graphics::GetSampler()
 	{
 		return m_samplerLinear;
+	}
+
+	bool Graphics::IsReady()
+	{
+		return m_isReady;
 	}
 }

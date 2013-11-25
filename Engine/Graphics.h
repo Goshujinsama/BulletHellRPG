@@ -22,6 +22,7 @@ namespace Engine
 
 		bool IsFullscreen();
 		void SetFullscreen( bool fullscreen );
+		bool IsReady();
 
 		SIZE GetResolution();
 		void SetResolution(unsigned int width, unsigned int height);
@@ -33,6 +34,7 @@ namespace Engine
 		ID3D11SamplerState		*GetSampler();
 
 	private:
+		bool				m_isReady;
 		bool				m_vsync_enabled;
 		bool				m_fullscreen;
 		SIZE				m_screenSize;

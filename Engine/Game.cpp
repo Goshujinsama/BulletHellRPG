@@ -50,9 +50,12 @@ namespace Engine
 				{
 					if(Update(0.0f, 0))
 					{
-						m_graphics->Begin();
-						Render();
-						m_graphics->End();
+						if(m_graphics->IsReady())
+						{
+							m_graphics->Begin();
+							Render();
+							m_graphics->End();
+						}
 					}
 					else
 					{
