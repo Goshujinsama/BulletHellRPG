@@ -2,6 +2,7 @@
 #define SPRITE_H
 
 #include "Graphics.h"
+#include "Image.h"
 #include "Queue.h"
 
 namespace Engine
@@ -10,6 +11,7 @@ namespace Engine
 	{
 		float PositionX;
 		float PositionY;
+		float PositionZ;
 		float SizeX;
 		float SizeY;
 		float Opacity;
@@ -22,16 +24,17 @@ namespace Engine
 	class Sprite
 	{
 	public:
-		Sprite(Graphics *graphics, wchar_t *resourceName, unsigned int columns, unsigned int rows);
+		Sprite(Graphics *graphics, Image *image, unsigned int columns, unsigned int rows);
 		~Sprite();
 
 		bool Initialize();
 
-		void Enqueue(unsigned int frame, float x, float y, float width, float height);
+		void Enqueue(unsigned int frame, float x, float y, float z, float width, float height);
 		void Draw();
 
 	private:
 		Graphics					*m_graphics;
+		Image						*m_image;
 		ID3D11InputLayout			*m_inputLayout;
 		ID3D11ShaderResourceView	*m_spriteSheet;
 		ID3D11VertexShader			*m_vertexShader;

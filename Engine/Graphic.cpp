@@ -26,11 +26,13 @@ namespace Engine
 		DXGI_ADAPTER_DESC				adapterDesc;
 		DXGI_SWAP_CHAIN_DESC			swapChainDesc;
 		D3D_FEATURE_LEVEL				featureLevel;
-		unsigned int numModes, i, numerator, denominator, stringLength, screenWidth, screenHeight;
+		D3D11_BLEND_DESC				blendDesc;
+		D3D11_SAMPLER_DESC				samplerDesc;
+		unsigned int numModes, i, numerator, denominator, stringLength;
 		int error;
 
-		screenWidth = m_window->GetSize().cx;
-		screenHeight = m_window->GetSize().cy;
+		m_screenSize.cx = m_window->GetSize().cx;
+		m_screenSize.cy = m_window->GetSize().cy;
 
 		RETURN_FAIL( CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&factory) );
 		RETURN_FAIL( factory->EnumAdapters(0, &adapter) );
@@ -43,9 +45,9 @@ namespace Engine
 
 		for(i = 0; i < numModes; ++i)
 		{
-			if(displayModeList[i].Width == screenWidth)
+			if(displayModeList[i].Width == m_screenSize.cx)
 			{
-				if(displayModeList[i].Height == screenHeight)
+				if(displayModeList[i].Height == m_screenSize.cy)
 				{
 					numerator = displayModeList[i].RefreshRate.Numerator;
 					denominator = displayModeList[i].RefreshRate.Denominator;
@@ -67,8 +69,8 @@ namespace Engine
 		ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
 		swapChainDesc.BufferCount = 2;
 		swapChainDesc.Windowed = true;
-		swapChainDesc.BufferDesc.Width = screenWidth;
-		swapChainDesc.BufferDesc.Height = screenHeight;
+		swapChainDesc.BufferDesc.Width = m_screenSize.cx;
+		swapChainDesc.BufferDesc.Height = m_screenSize.cy;
 		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		if(m_vsync_enabled)
 		{
@@ -93,6 +95,28 @@ namespace Engine
 		RETURN_FAIL( D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, 0, &featureLevel, 1, D3D11_SDK_VERSION, &swapChainDesc, &m_swapChain, &m_device, NULL, &m_deviceContext) );
 		RETURN_FAIL( m_swapChain->GetParent(__uuidof(IDXGIFactory), (LPVOID*)&factory) );
 		RETURN_FAIL( factory->MakeWindowAssociation(m_window->GetHWnd(), DXGI_MWA_NO_WINDOW_CHANGES) );
+
+		ZeroMemory( &blendDesc, sizeof( blendDesc ) );
+		blendDesc.RenderTarget[0].BlendEnable = TRUE;
+		blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		RETURN_FAIL( m_device->CreateBlendState( &blendDesc, &m_blendAlpha ) );
+
+		m_deviceContext->OMSetBlendState( m_blendAlpha, NULL, 0xFFFFFF );
+
+		ZeroMemory( &samplerDesc, sizeof( samplerDesc ) );
+		samplerDesc.AddressU        = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressV        = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.AddressW        = D3D11_TEXTURE_ADDRESS_CLAMP;
+		samplerDesc.ComparisonFunc  = D3D11_COMPARISON_NEVER;
+		samplerDesc.Filter          = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.MaxLOD          = D3D11_FLOAT32_MAX;
+		RETURN_FAIL( m_device->CreateSamplerState( &samplerDesc, &m_samplerLinear ) );
 
 		return CreateTargets();
 	}
@@ -203,6 +227,12 @@ namespace Engine
 		return;
 	}
 
+	void Graphics::SetViewPort( float x, float y, float width, float height, float minDepth, float maxDepth )
+	{
+		D3D11_VIEWPORT viewport = { x * m_screenSize.cx, y * m_screenSize.cy, width * m_screenSize.cx, height * m_screenSize.cy, minDepth, maxDepth };
+		m_deviceContext->RSSetViewports( 1, &viewport );
+	}
+
 	bool Graphics::IsFullscreen()
 	{
 		return m_fullscreen;
@@ -297,5 +327,10 @@ namespace Engine
 	ID3D11RenderTargetView *Graphics::GetRenderTarget()
 	{
 		return m_renderTargetView;
+	}
+	
+	ID3D11SamplerState *Graphics::GetSampler()
+	{
+		return m_samplerLinear;
 	}
 }

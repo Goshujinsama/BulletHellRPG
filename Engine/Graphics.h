@@ -18,19 +18,19 @@ namespace Engine
 		void Shutdown();
 		void Begin();
 		void End();
+		void SetViewPort( float x, float y, float width, float height, float minDepth, float maxDepth );
 
 		bool IsFullscreen();
 		void SetFullscreen( bool fullscreen );
 
 		SIZE GetResolution();
 		void SetResolution(unsigned int width, unsigned int height);
-
 		void ResizeBuffers(unsigned int width, unsigned int height);
 
 		ID3D11Device			*GetDevice();
 		ID3D11DeviceContext		*GetContext();
 		ID3D11RenderTargetView	*GetRenderTarget();
-
+		ID3D11SamplerState		*GetSampler();
 
 	private:
 		bool				m_vsync_enabled;
@@ -48,6 +48,8 @@ namespace Engine
 		ID3D11Texture2D			*m_depthStencilBuffer;
 		ID3D11DepthStencilState	*m_depthStencilState;
 		ID3D11DepthStencilView	*m_depthStencilView;
+		ID3D11BlendState		*m_blendAlpha;
+		ID3D11SamplerState		*m_samplerLinear;
 
 		bool CreateTargets();
 	};

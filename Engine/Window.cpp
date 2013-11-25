@@ -43,7 +43,7 @@ namespace Engine
 		posX = (screenWidth - width) / 2;
 		posY = (screenHeight - height) / 2;
 
-		m_hWnd = CreateWindowEx(WS_EX_APPWINDOW, m_gameTitle, m_gameTitle, WS_OVERLAPPEDWINDOW, posX, posY, width, height, NULL, NULL, m_hInstance, NULL);
+		m_hWnd = CreateWindowEx(WS_EX_APPWINDOW, m_gameTitle, m_gameTitle, WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_POPUPWINDOW | WS_CAPTION, posX, posY, width, height, NULL, NULL, m_hInstance, NULL);
 
 		ShowWindow(m_hWnd, SW_SHOW);
 		SetForegroundWindow(m_hWnd);
