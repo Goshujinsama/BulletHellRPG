@@ -3,24 +3,26 @@
 
 #include <Windows.h>
 
-#include "Input.h"
-
 namespace Engine
 {
+	class Input;
+	class Graphics;
+
 	class Window
 	{
 	public:
 		Window(LPCWSTR gameTitle, Input *input);
-		~Window();
+
+		bool Initialize(unsigned int width, unsigned int height);
+		void Shutdown();
 
 		void Run();
 		LRESULT CALLBACK MessageHandler(HWND, UINT, WPARAM, LPARAM);
 
-	protected:
-		bool isFullscreen();
-		void setFullscreen( bool fullscreen );
-		SIZE getSize();
-		void setSize( int width, int height );
+		void SetGraphics( Graphics *graphics );
+
+		HWND GetHWnd();
+		SIZE GetSize();
 
 	private:
 		LPCWSTR		m_gameTitle;
@@ -30,6 +32,7 @@ namespace Engine
 		SIZE		m_size;
 
 		Input		*m_input;
+		Graphics	*m_graphics;
 	};
 
 	static Window* WindowHandle = NULL;

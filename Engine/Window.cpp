@@ -1,4 +1,7 @@
+#include "Common.h"
 #include "Window.h"
+#include "Input.h"
+#include "Graphics.h"
 
 namespace Engine
 {
@@ -9,70 +12,48 @@ namespace Engine
 		m_fullscreen	= false;
 		m_hInstance		= NULL;
 		m_hWnd			= NULL;
-		m_size.cx		= 800;
-		m_size.cy		= 600;
+	}
 
+	bool Window::Initialize(unsigned int width, unsigned int height)
+	{
 		WNDCLASSEX wc;
 		DEVMODE dmScreenSettings;
-		int screenWidth, screenHeight;
-		int posX, posY;
+		unsigned int screenWidth, screenHeight, posX, posY;
 
 		Engine::WindowHandle = this;
 
 		m_hInstance = GetModuleHandle(NULL);
 
-		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+		ZeroMemory(&wc, sizeof(wc));
+		wc.cbSize = sizeof(WNDCLASSEX);
+		wc.style = CS_HREDRAW | CS_VREDRAW;
 		wc.lpfnWndProc = WndProc;
-		wc.cbClsExtra = 0;
-		wc.cbWndExtra = 0;
 		wc.hInstance = m_hInstance;
 		wc.hIcon = LoadIcon(NULL, IDI_WINLOGO);
 		wc.hIconSm = wc.hIcon;
 		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 		wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		wc.lpszMenuName = NULL;
 		wc.lpszClassName = m_gameTitle;
-		wc.cbSize = sizeof(WNDCLASSEX);
 
 		RegisterClassEx(&wc);
 
 		screenWidth = GetSystemMetrics(SM_CXSCREEN);
 		screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-		if(m_fullscreen)
-		{
-			memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
-			dmScreenSettings.dmSize = sizeof(dmScreenSettings);
-			dmScreenSettings.dmPelsWidth = (unsigned long)screenWidth;
-			dmScreenSettings.dmPelsHeight = (unsigned long)screenHeight;
-			dmScreenSettings.dmBitsPerPel = 32;
-			dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+		posX = (screenWidth - width) / 2;
+		posY = (screenHeight - height) / 2;
 
-			ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN);
-			m_hWnd = CreateWindowEx(WS_EX_APPWINDOW, m_gameTitle, m_gameTitle, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP, 0, 0, screenWidth, screenHeight, NULL, NULL, m_hInstance, NULL);
-		}
-		else
-		{
-			posX = (screenWidth - m_size.cx) / 2;
-			posY = (screenHeight - m_size.cy) / 2;
-
-			m_hWnd = CreateWindowEx(WS_EX_APPWINDOW, m_gameTitle, m_gameTitle, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_POPUPWINDOW, posX, posY, m_size.cx, m_size.cy, NULL, NULL, m_hInstance, NULL);
-		}
+		m_hWnd = CreateWindowEx(WS_EX_APPWINDOW, m_gameTitle, m_gameTitle, WS_OVERLAPPEDWINDOW, posX, posY, width, height, NULL, NULL, m_hInstance, NULL);
 
 		ShowWindow(m_hWnd, SW_SHOW);
 		SetForegroundWindow(m_hWnd);
 		SetFocus(m_hWnd);
 
-		return;
+		return true;
 	}
 	
-	Window::~Window()
+	void Window::Shutdown()
 	{
-		if(m_fullscreen)
-		{
-			ChangeDisplaySettings(NULL, 0);
-		}
-
 		if(m_hWnd != NULL)
 		{
 			DestroyWindow(m_hWnd);
@@ -90,72 +71,21 @@ namespace Engine
 		return;
 	}
 
-	bool Window::isFullscreen()
+	HWND Window::GetHWnd()
 	{
-		return m_fullscreen;
+		return m_hWnd;
 	}
 
-	void Window::setFullscreen( bool fullscreen )
+	SIZE Window::GetSize()
 	{
-		DEVMODE dmScreenSettings;
-		int screenWidth, screenHeight;
-		int posX, posY;
+		SIZE size;
+		RECT rect;
 
-		if(m_fullscreen != fullscreen)
-		{
-			m_fullscreen = fullscreen;
-			if(m_hWnd != NULL)
-			{
+		GetWindowRect(m_hWnd, &rect);
+		size.cx = rect.right - rect.left;
+		size.cy = rect.bottom - rect.top;
 
-				screenWidth = GetSystemMetrics(SM_CXSCREEN);
-				screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-				if(m_fullscreen)
-				{
-					memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
-					dmScreenSettings.dmSize = sizeof(dmScreenSettings);
-					dmScreenSettings.dmPelsWidth = (unsigned long)screenWidth;
-					dmScreenSettings.dmPelsHeight = (unsigned long)screenHeight;
-					dmScreenSettings.dmBitsPerPel = 32;
-					dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-
-					ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN);
-					SetWindowLong(m_hWnd, GWL_STYLE, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP | WS_VISIBLE);
-					SetWindowPos(m_hWnd, NULL, 0, 0, screenWidth, screenHeight, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-				}
-				else
-				{
-					posX = (screenWidth - m_size.cx) / 2;
-					posY = (screenHeight - m_size.cy) / 2;
-
-					ChangeDisplaySettings(NULL, 0);
-					SetWindowLong(m_hWnd, GWL_STYLE, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE);
-					SetWindowPos(m_hWnd, NULL, posX, posY, m_size.cx, m_size.cy, SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-				}
-			}
-		}
-	}
-
-	SIZE Window::getSize()
-	{
-		return m_size;
-	}
-
-	void Window::setSize( int width, int height )
-	{
-		if(m_size.cx != width || m_size.cy != height)
-		{
-			m_size.cx = width;
-			m_size.cy = height;
-
-			if(m_hWnd != NULL)
-			{
-				if(!m_fullscreen)
-				{
-					SetWindowPos(m_hWnd, NULL, 0, 0, m_size.cx, m_size.cy, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE);
-				}
-			}
-		}
+		return size;
 	}
 
 	LRESULT CALLBACK Window::MessageHandler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
@@ -178,12 +108,48 @@ namespace Engine
 				return 0;
 			}
 
+			case WM_SYSCHAR:
+			{
+				if(wparam == VK_RETURN)
+				{
+					if(m_graphics != NULL)
+					{
+						m_graphics->SetFullscreen( !m_graphics->IsFullscreen() );
+					}
+					return 0;
+				}
+				return DefWindowProc(hwnd, umsg, wparam, lparam);
+			}
+
+			case WM_KILLFOCUS:
+			{
+				if(m_graphics != NULL)
+				{
+					m_graphics->SetFullscreen( false );
+				}
+				return 0;
+			}
+
+			case WM_SIZE:
+			{
+				if(m_graphics != NULL)
+				{
+					m_graphics->ResizeBuffers( LOWORD(lparam), HIWORD(lparam) );
+				}
+				return 0;
+			}
+
 			// Any other messages send to the default message handler as our application won't make use of them.
 			default:
 			{
 				return DefWindowProc(hwnd, umsg, wparam, lparam);
 			}
 		}
+	}
+
+	void Window::SetGraphics( Graphics *graphics )
+	{
+		m_graphics = graphics;
 	}
 }
 

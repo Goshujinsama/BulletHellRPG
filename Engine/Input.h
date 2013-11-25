@@ -12,9 +12,11 @@ namespace Engine
 		void KeyUp(unsigned int key);
 
 		bool IsKeyDown(unsigned int key);
+		bool WasKeyPressed(unsigned int key);
 
 	private:
-		bool m_keys[256];
+		bool m_keysDown[256];
+		bool m_keysPressed[256];
 	};
 }
 
