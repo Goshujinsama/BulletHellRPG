@@ -30,7 +30,7 @@ public:
 		{
 			m_image = new Engine::Image();
 			m_image->Initialize(L"test.png", GetGraphics());
-			m_sprite = new Engine::Sprite(GetGraphics(), m_image, 1, 1);
+			m_sprite = new Engine::Sprite(GetGraphics(), m_image, 2, 2);
 			m_sprite->Initialize();
 		}
 
@@ -47,9 +47,9 @@ public:
 		float ratio = (float)GetGraphics()->GetResolution().cx / GetGraphics()->GetResolution().cy;
 
 		GetGraphics()->SetViewPort(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f);
-		m_sprite->Enqueue(0, -0.5, 0.3, 0.1, 0.1, 0.1 * ratio);
-		m_sprite->Enqueue(0, 0.5, 0.0, 0.5, 0.1, 0.1 * ratio);
-		m_sprite->Enqueue(0, 0.6, 0.1, 0.3, 0.1, 0.1 * ratio);
+		m_sprite->Enqueue(0, -0.5f, 0.3f, 0.1f, 0.1f, 0.1f * ratio);
+		m_sprite->Enqueue(1, 0.0f, 0.0f, 0.99f, 1.0f, 1.0f);
+		m_sprite->Enqueue(2, 0.6f, 0.1f, 0.3f, 0.1f, 0.1f * ratio);
 		m_sprite->Draw();
 
 		return;
